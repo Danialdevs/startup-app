@@ -491,8 +491,8 @@ export default function TasksPage() {
   return (
     <div className="flex h-screen bg-slate-50">
       <Sidebar startupId={startup?.id} startupName={startup?.name} />
-      <main className="flex-1 overflow-hidden flex flex-col">
-        <div className="p-6 bg-white border-b">
+      <main className="flex-1 overflow-hidden flex flex-col lg:ml-0">
+        <div className="p-4 sm:p-6 bg-white border-b">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">Задачи</h1>

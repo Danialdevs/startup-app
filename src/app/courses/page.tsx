@@ -86,8 +86,8 @@ export default function CoursesPage() {
     }
 
     return (
-        <div className="flex-1 p-8 overflow-auto">
-            <div className="flex items-center justify-between mb-8">
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+            <div className="flex items-center justify-between mb-6 sm:mb-8">
                 <div>
 
                 </div>

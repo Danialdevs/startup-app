@@ -11,7 +11,7 @@ export default function CoursesLayout({
     return (
         <div className="flex h-screen bg-muted/30">
             <Suspense fallback={
-                <div className="flex h-screen w-[240px] flex-col border-r bg-card">
+                <div className="hidden lg:flex h-screen w-[240px] flex-col border-r bg-card">
                     <div className="flex h-14 items-center gap-2 border-b px-4">
                         <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
@@ -28,7 +28,7 @@ export default function CoursesLayout({
             }>
                 <Sidebar />
             </Suspense>
-            <main className="flex-1 overflow-hidden flex flex-col">
+            <main className="flex-1 overflow-hidden flex flex-col lg:ml-0">
                 {children}
             </main>
         </div>

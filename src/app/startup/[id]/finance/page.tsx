@@ -218,8 +218,8 @@ export default function FinancePage() {
   return (
     <div className="flex h-screen bg-background">
       <Sidebar startupId={startup?.id} startupName={startup?.name} />
-      <main className="flex-1 overflow-auto">
-        <div className="p-6">
+      <main className="flex-1 overflow-auto lg:ml-0">
+        <div className="p-4 sm:p-6 lg:p-8">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-semibold">Финансы</h1>
             <div className="flex gap-2">

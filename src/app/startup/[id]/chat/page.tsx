@@ -65,7 +65,7 @@ export default function StartupChatPage() {
     <div className="flex h-screen bg-muted/30">
       <Sidebar startupId={startup?.id} startupName={startup?.name} />
       
-      <main className="flex-1 overflow-hidden flex flex-col">
+      <main className="flex-1 overflow-hidden flex flex-col lg:ml-0">
         {/* Header */}
         <div className="border-b bg-card p-6">
           <div className="max-w-5xl mx-auto">
@@ -77,7 +77,7 @@ export default function StartupChatPage() {
         </div>
 
         {/* Chat Component - Full Height */}
-        <div className="flex-1 min-h-0 p-6">
+        <div className="flex-1 min-h-0 p-4 sm:p-6">
           {startup?.id && (
             <div className="max-w-5xl mx-auto h-full">
               <StartupChat

@@ -180,16 +180,16 @@ export default function StartupOverviewPage() {
 
   const hasAnalysis = analysis !== null
 
-  return (
-    <div className="flex h-screen bg-muted/30">
-      <Sidebar startupId={startup?.id} startupName={startup?.name} />
+      return (
+        <div className="flex h-screen bg-muted/30">
+          <Sidebar startupId={startup?.id} startupName={startup?.name} />
 
-      <main className="flex-1 overflow-auto">
-        <div className="p-8 max-w-5xl mx-auto">
+          <main className="flex-1 overflow-auto lg:ml-0">
+            <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">{startup?.name}</h1>
-            <p className="text-muted-foreground mt-1">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold">{startup?.name}</h1>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">
               {TAB_LABELS[activeTab]}
             </p>
           </div>

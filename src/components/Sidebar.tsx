@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -21,7 +21,9 @@ import {
   MapIcon,
   LightBulbIcon,
   BookOpenIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  Bars3Icon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 
 interface SidebarProps {
@@ -34,6 +36,12 @@ function SidebarContent({ startupId, startupName }: SidebarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, logout } = useStore()
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileOpen(false)
+  }, [pathname])
 
   const isAnalysisTab = (tab: string) => {
     return searchParams.get('tab') === tab
@@ -46,7 +54,38 @@ function SidebarContent({ startupId, startupName }: SidebarProps) {
   }
 
   return (
-    <div className="flex h-screen w-[240px] flex-col border-r bg-card">
+    <>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setIsMobileOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-card border shadow-lg"
+        aria-label="Open menu"
+      >
+        <Bars3Icon className="h-6 w-6" />
+      </button>
+
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={cn(
+        "flex h-screen w-[240px] flex-col border-r bg-card fixed lg:static z-40 transition-transform duration-300",
+        "lg:translate-x-0",
+        isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}>
+        {/* Mobile Close Button */}
+        <button
+          onClick={() => setIsMobileOpen(false)}
+          className="lg:hidden absolute top-4 right-4 p-2 rounded-lg hover:bg-muted"
+          aria-label="Close menu"
+        >
+          <XMarkIcon className="h-5 w-5" />
+        </button>
       {/* Logo */}
       <div className="flex h-14 items-center gap-2 border-b px-4">
         <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -267,6 +306,7 @@ function SidebarContent({ startupId, startupName }: SidebarProps) {
         </nav>
       </div>
     </div>
+    </>
   )
 }
 
