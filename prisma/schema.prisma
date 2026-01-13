@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatar    String?
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  startups       Startup[]
+  teamMemberships TeamMember[]
+  mentor         Mentor?
+  articles       Article[]
+}
+
+model Startup {
+  id          String   @id @default(uuid())
+  name        String
+  description String?  @db.Text
+  problem     String?  @db.Text
+  idea        String?  @db.Text
+  audience    String?  @db.Text
+  analysis    String?  @db.LongText  // JSON stored AI analysis
+  stage       Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  problemAnswers ProblemAnswer[]
+  ideaDetails    Idea?
+  teamMembers    TeamMember[]
+  tasks          Task[]
+  mvpFeatures    MvpFeature[]
+  transactions   Transaction[]
+  articles       Article[]
+  chatMessages   ChatMessage[]
+}
+
+model ProblemAnswer {
+  id        String   @id @default(uuid())
+  questionId String
+  answer    String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  startupId String
+  startup   Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+}
+
+model Idea {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  targetAudience String? @db.Text
+  uniqueValue String?  @db.Text
+  validated   Boolean  @default(false)
+  aiSuggestions String? @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  startupId String  @unique
+  startup   Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  role      String
+  skills    String?  @db.Text
+  joinedAt  DateTime @default(now())
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // For invited members who haven't registered yet
+  email     String?
+  name      String?
+  
+  startupId String
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  
+  taskAssignments TaskAssignee[]
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  status      String   @default("todo") // todo, in_progress, done
+  priority    String   @default("medium") // low, medium, high
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  startupId   String
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  
+  assignees   TaskAssignee[]
+}
+
+model TaskAssignee {
+  id          String   @id @default(uuid())
+  
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  memberId    String
+  member      TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  assignedAt  DateTime @default(now())
+  
+  @@unique([taskId, memberId])
+}
+
+model MvpFeature {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  priority    Int      @default(0)
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  startupId String
+  startup   Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  type        String   // income, expense
+  amount      Float
+  category    String
+  description String?
+  date        DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  startupId String
+  startup   Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+}
+
+model Article {
+  id          String   @id @default(uuid())
+  title       String
+  excerpt     String?  @db.Text
+  content     String   @db.LongText
+  image       String?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // General articles (by admin) have authorId, project articles have startupId
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  startupId String?
+  startup   Startup? @relation(fields: [startupId], references: [id], onDelete: Cascade)
+}
+
+model Mentor {
+  id          String   @id @default(uuid())
+  bio         String   @db.Text
+  expertise   String   @db.Text  // JSON array of expertise areas
+  experience  Int      @default(0) // years of experience
+  hourlyRate  Float?
+  available   Boolean  @default(true)
+  linkedIn    String?
+  telegram    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Opportunity {
+  id           String   @id @default(uuid())
+  title        String
+  description  String   @db.Text
+  type         String   // grant, competition, investment_fund, accelerator
+  organization String   // Название организации (например, Eurasia Hub)
+  amount       String?  // Сумма финансирования (текст, может быть диапазон)
+  deadline     DateTime?
+  link         String?  // Ссылка на сайт
+  eligibility  String?  @db.Text // Требования для участия
+  categories   String   @db.Text // JSON array of categories
+  country      String?  // Страна
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  image       String?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  modules     Module[]
+}
+
+model Module {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  lessons     Lesson[]
+}
+
+model Lesson {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  content     String?  @db.LongText // Rich text content
+  videoUrl    String?  // Video link (YouTube, etc.)
+  order       Int      @default(0)
+  isFree      Boolean  @default(false) // Preview available?
+  duration    Int?     // Duration in minutes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  moduleId    String
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id          String   @id @default(uuid())
+  role        String   // user, assistant
+  content     String   @db.Text
+  createdAt   DateTime @default(now())
+
+  startupId   String
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId, createdAt])
+}
