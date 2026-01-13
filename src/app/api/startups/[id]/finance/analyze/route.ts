@@ -6,7 +6,7 @@ import { analyzeFinances } from '@/lib/openai'
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = await getSession()
@@ -14,11 +14,13 @@ export async function POST(
             return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
         }
 
+        const { id } = await params
+
         // Get transactions
         const transactions = await prisma.transaction.findMany({
             where: {
                 startup: {
-                    id: params.id,
+                    id: id,
                     OR: [
                         { ownerId: session.userId },
                         { teamMembers: { some: { userId: session.userId } } }
