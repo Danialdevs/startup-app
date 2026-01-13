@@ -390,7 +390,7 @@ export default function StartupOverviewPage() {
                           <h4 className="font-semibold mb-2">Конкуренты</h4>
                           {analysis.competitors && analysis.competitors.length > 0 ? (
                             <div className="space-y-2">
-                              {analysis.competitors.slice(0, 3).map((comp: any, i: number) => (
+                              {analysis.competitors.slice(0, 3).map((comp, i) => (
                                 <div key={i} className="text-sm">
                                   <span className="font-medium">{comp.name}</span>
                                   <span className="text-muted-foreground ml-2">({comp.region}, схожесть {comp.similarity}%)</span>

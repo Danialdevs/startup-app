@@ -66,6 +66,16 @@ interface Resource {
   items: { name: string; description: string; url?: string }[]
 }
 
+interface Competitor {
+  name: string
+  region: string
+  similarity: number
+  advantages?: string[]
+  disadvantages?: string[]
+  funding?: string
+  stage?: string
+}
+
 export interface AnalysisData {
   executiveSummary: {
     marketSize: string
@@ -102,6 +112,7 @@ export interface AnalysisData {
   resources: Resource[]
   keyQuestions: string[]
   sources: string[]
+  competitors?: Competitor[]
 }
 
 interface StartupAnalysisProps {
