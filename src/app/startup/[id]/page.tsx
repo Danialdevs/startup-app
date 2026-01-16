@@ -6,6 +6,8 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas-pro'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx'
+import { saveAs } from 'file-saver'
 import { Sidebar } from '@/components/Sidebar'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,6 +33,130 @@ import {
   ChartBarIcon
 } from '@heroicons/react/24/outline'
 import { ArrowPathIcon } from '@heroicons/react/24/solid'
+import { DocumentTextIcon } from '@heroicons/react/24/outline'
+
+// Helper function to convert markdown to DOCX paragraphs
+function markdownToDocxParagraphs(markdown: string): Paragraph[] {
+  const paragraphs: Paragraph[] = []
+  const lines = markdown.split('\n')
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim()
+    
+    if (!line) continue
+    
+    // Headers
+    if (line.startsWith('# ')) {
+      paragraphs.push(
+        new Paragraph({
+          text: line.replace('# ', ''),
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 400, after: 200 },
+        })
+      )
+    } else if (line.startsWith('## ')) {
+      paragraphs.push(
+        new Paragraph({
+          text: line.replace('## ', ''),
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 300, after: 150 },
+        })
+      )
+    } else if (line.startsWith('### ')) {
+      paragraphs.push(
+        new Paragraph({
+          text: line.replace('### ', ''),
+          heading: HeadingLevel.HEADING_3,
+          spacing: { before: 200, after: 100 },
+        })
+      )
+    } else if (line.startsWith('#### ')) {
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: line.replace('#### ', ''),
+              bold: true,
+              size: 24,
+            }),
+          ],
+          spacing: { before: 150, after: 80 },
+        })
+      )
+    } else if (line.startsWith('- ') || line.startsWith('* ')) {
+      // Bullet points
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: '• ' + line.replace(/^[-*] /, ''),
+            }),
+          ],
+          indent: { left: 720 },
+          spacing: { after: 80 },
+        })
+      )
+    } else if (/^\d+\. /.test(line)) {
+      // Numbered list
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: line,
+            }),
+          ],
+          indent: { left: 720 },
+          spacing: { after: 80 },
+        })
+      )
+    } else if (line.startsWith('**') && line.endsWith('**')) {
+      // Bold text only
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: line.replace(/\*\*/g, ''),
+              bold: true,
+            }),
+          ],
+          spacing: { after: 100 },
+        })
+      )
+    } else {
+      // Regular text with inline formatting
+      const children: TextRun[] = []
+      let text = line
+      
+      // Handle bold and italic inline
+      const boldRegex = /\*\*(.+?)\*\*/g
+      const parts = text.split(boldRegex)
+      
+      for (let j = 0; j < parts.length; j++) {
+        if (parts[j]) {
+          children.push(
+            new TextRun({
+              text: parts[j],
+              bold: j % 2 === 1,
+            })
+          )
+        }
+      }
+      
+      if (children.length === 0) {
+        children.push(new TextRun({ text: line }))
+      }
+      
+      paragraphs.push(
+        new Paragraph({
+          children,
+          spacing: { after: 100 },
+        })
+      )
+    }
+  }
+  
+  return paragraphs
+}
 
 interface Startup {
   id: string
@@ -248,47 +374,105 @@ export default function StartupOverviewPage() {
               {/* AI Business Plan Information */}
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <SparklesIcon className="h-5 w-5 text-primary" />
                       Бизнес-план от AI
                     </CardTitle>
-                    <Button
-                      onClick={async () => {
-                        if (!startup) return
-                        setIsGeneratingPlan(true)
-                        try {
-                          const res = await fetch(`/api/startups/${startup.id}/business-plan`, {
-                            method: 'POST'
-                          })
-                          if (res.ok) {
-                            const data = await res.json()
-                            setBusinessPlan(data.businessPlan)
-                          } else {
-                            alert('Ошибка при генерации бизнес-плана')
-                          }
-                        } catch (error) {
-                          console.error('Error generating business plan:', error)
-                          alert('Ошибка при генерации бизнес-плана')
-                        } finally {
-                          setIsGeneratingPlan(false)
-                        }
-                      }}
-                      disabled={isGeneratingPlan}
-                      variant="outline"
-                    >
-                      {isGeneratingPlan ? (
-                        <>
-                          <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" />
-                          Генерация...
-                        </>
-                      ) : (
-                        <>
-                          <SparklesIcon className="mr-2 h-4 w-4" />
-                          Сгенерировать бизнес-план
-                        </>
+                    <div className="flex items-center gap-2">
+                      {businessPlan && (
+                        <Button
+                          onClick={async () => {
+                            if (!startup || !businessPlan) return
+                            
+                            try {
+                              // Create DOCX document
+                              const doc = new Document({
+                                sections: [
+                                  {
+                                    properties: {},
+                                    children: [
+                                      new Paragraph({
+                                        children: [
+                                          new TextRun({
+                                            text: `Бизнес-план: ${startup.name}`,
+                                            bold: true,
+                                            size: 48,
+                                          }),
+                                        ],
+                                        alignment: AlignmentType.CENTER,
+                                        spacing: { after: 400 },
+                                      }),
+                                      new Paragraph({
+                                        children: [
+                                          new TextRun({
+                                            text: `Дата создания: ${new Date().toLocaleDateString('ru-RU')}`,
+                                            italics: true,
+                                            size: 22,
+                                            color: '666666',
+                                          }),
+                                        ],
+                                        alignment: AlignmentType.CENTER,
+                                        spacing: { after: 600 },
+                                      }),
+                                      ...markdownToDocxParagraphs(businessPlan),
+                                    ],
+                                  },
+                                ],
+                              })
+                              
+                              // Generate and save file
+                              const blob = await Packer.toBlob(doc)
+                              saveAs(blob, `${startup.name}_бизнес-план_${new Date().toISOString().split('T')[0]}.docx`)
+                            } catch (error) {
+                              console.error('DOCX export error:', error)
+                              alert('Ошибка при экспорте в DOCX')
+                            }
+                          }}
+                          variant="outline"
+                          className="gap-2"
+                        >
+                          <DocumentTextIcon className="h-4 w-4" />
+                          Экспорт DOCX
+                        </Button>
                       )}
-                    </Button>
+                      <Button
+                        onClick={async () => {
+                          if (!startup) return
+                          setIsGeneratingPlan(true)
+                          try {
+                            const res = await fetch(`/api/startups/${startup.id}/business-plan`, {
+                              method: 'POST'
+                            })
+                            if (res.ok) {
+                              const data = await res.json()
+                              setBusinessPlan(data.businessPlan)
+                            } else {
+                              alert('Ошибка при генерации бизнес-плана')
+                            }
+                          } catch (error) {
+                            console.error('Error generating business plan:', error)
+                            alert('Ошибка при генерации бизнес-плана')
+                          } finally {
+                            setIsGeneratingPlan(false)
+                          }
+                        }}
+                        disabled={isGeneratingPlan}
+                        variant="outline"
+                      >
+                        {isGeneratingPlan ? (
+                          <>
+                            <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" />
+                            Генерация...
+                          </>
+                        ) : (
+                          <>
+                            <SparklesIcon className="mr-2 h-4 w-4" />
+                            Сгенерировать бизнес-план
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
