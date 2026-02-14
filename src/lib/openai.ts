@@ -645,33 +645,29 @@ export async function chatWithStartup(
     idea: string
     audience: string
     answers?: Record<string, string>
+    documentsContext?: string
   },
   messages: { role: 'user' | 'assistant'; content: string }[]
 ) {
   console.log('=== chatWithStartup called ===')
   console.log('API Key exists:', !!apiKey)
-  console.log('API Key prefix:', apiKey?.substring(0, 15) + '...' || 'N/A')
-    console.log('DeepSeek client exists:', !!openai)
+  console.log('DeepSeek client exists:', !!openai)
   console.log('Messages count:', messages.length)
+  console.log('Has documents context:', !!startupContext.documentsContext)
 
   if (!apiKey) {
     console.error('ERROR: DEEPSEEK_API_KEY is not set!')
-    console.error('Environment check:')
-    console.error('  process.env.DEEPSEEK_API_KEY:', !!process.env.DEEPSEEK_API_KEY)
-    console.error('  process.env.OPENAI_API_KEY:', !!process.env.OPENAI_API_KEY)
-    console.error('  All env vars with DEEPSEEK/OPENAI:', Object.keys(process.env).filter(k => k.includes('DEEPSEEK') || k.includes('OPENAI')))
     return 'Ошибка: API ключ не настроен. Пожалуйста, свяжитесь с администратором.'
   }
 
   if (!openai) {
     console.error('ERROR: DeepSeek client is not initialized!')
-    console.error('API Key exists but client is null - this should not happen')
     return 'Ошибка: DeepSeek клиент не инициализирован. Пожалуйста, проверьте конфигурацию.'
   }
 
   const contextPrompt = `
 Ты — AI-ассистент стартапа "${startupContext.name}".
-Твоя задача — помогать основателю развивать проект, отвечать на вопросы и давать советы, основываясь на контексте стартапа.
+Твоя задача — помогать основателю развивать проект, отвечать на вопросы и давать советы, основываясь на контексте стартапа и его документах.
 
 Контекст стартапа:
 Название: ${startupContext.name}
@@ -680,7 +676,9 @@ export async function chatWithStartup(
 Решение (Идея): ${startupContext.idea}
 Целевая аудитория: ${startupContext.audience}
 ${startupContext.answers ? `Дополнительные детали:\n${Object.entries(startupContext.answers).map(([q, a]) => `- ${q}: ${a}`).join('\n')}` : ''}
+${startupContext.documentsContext || ''}
 
+ВАЖНО: Если у стартапа есть загруженные документы, используй информацию из них для более точных и контекстных ответов. Ссылайся на конкретные документы, когда это уместно.
 Отвечай кратко, по делу и мотивирующе. Если не знаешь ответа, предложи гипотезу или способ проверить.
 `
 
@@ -701,7 +699,7 @@ ${startupContext.answers ? `Дополнительные детали:\n${Object
         ...messages
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 1000,
     })
 
     console.log('DeepSeek API response received')

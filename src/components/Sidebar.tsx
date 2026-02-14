@@ -158,6 +158,17 @@ function SidebarContent({ startupId, startupName }: SidebarProps) {
             <BookOpenIcon className="h-4 w-4" />
             Курсы
           </Button>
+          <Button
+            variant={pathname.startsWith('/launchpad') ? 'secondary' : 'ghost'}
+            className={cn(
+              "w-full justify-start gap-3 h-9",
+              pathname.startsWith('/launchpad') && "bg-primary/10 text-primary hover:bg-primary/15"
+            )}
+            onClick={() => router.push('/launchpad')}
+          >
+            <LightBulbIcon className="h-4 w-4" />
+            Launchpad Kids
+          </Button>
         </nav>
 
         {/* Current Startup Navigation */}

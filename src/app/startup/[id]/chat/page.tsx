@@ -70,9 +70,6 @@ export default function StartupChatPage() {
         <div className="border-b bg-card p-6">
           <div className="max-w-5xl mx-auto">
             <h1 className="text-3xl font-bold">AI Ассистент</h1>
-            <p className="text-muted-foreground mt-2">
-              Задавайте вопросы о вашем стартапе "{startup?.name}". AI знает контекст проекта и поможет с развитием.
-            </p>
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { chatWithStartup } from '@/lib/openai'
+import { extractDocumentsContext } from '@/lib/documentExtractor'
 
 export async function GET(
   request: NextRequest,
@@ -63,12 +64,24 @@ export async function POST(
       return NextResponse.json({ error: 'Messages array is required' }, { status: 400 })
     }
 
-    // Get startup with context
+    // Get startup with context and documents
     const startup = await prisma.startup.findFirst({
       where: { id, ownerId: session.userId },
       include: {
         problemAnswers: true,
-        ideaDetails: true
+        ideaDetails: true,
+        documents: {
+          select: {
+            id: true,
+            name: true,
+            fileName: true,
+            fileUrl: true,
+            fileSize: true,
+            fileType: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 10, // Limit to 10 most recent documents
+        }
       }
     })
 
@@ -84,13 +97,22 @@ export async function POST(
       })
     }
 
+    // Extract text content from uploaded documents (RAG)
+    let documentsContext = ''
+    if (startup.documents && startup.documents.length > 0) {
+      console.log(`Extracting text from ${startup.documents.length} documents for RAG...`)
+      documentsContext = await extractDocumentsContext(startup.documents)
+      console.log(`Documents context length: ${documentsContext.length} chars`)
+    }
+
     const startupContext = {
       name: startup.name,
       description: startup.description || '',
       problem: startup.problem || '',
       idea: startup.idea || startup.ideaDetails?.description || '',
       audience: startup.audience || startup.ideaDetails?.targetAudience || '',
-      answers
+      answers,
+      documentsContext,
     }
 
     // Get last user message (the new one being sent)

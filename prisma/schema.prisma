@@ -21,6 +21,7 @@ model User {
   teamMemberships TeamMember[]
   mentor         Mentor?
   articles       Article[]
+  lpClasses      LPClass[]
 }
 
 model Startup {
@@ -323,4 +324,72 @@ model ChatMessage {
   startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
 
   @@index([startupId, createdAt])
+}
+
+// ==================== LAUNCHPAD KIDS ====================
+
+model LPProject {
+  id          String   @id @default(uuid())
+  name        String
+  icon        String   @default("🚀")
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  responses   LPProjectResponse[]
+  lessonPlans LPLessonPlan[]
+}
+
+model LPClass {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacherId String
+  teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  students  LPStudent[]
+}
+
+model LPStudent {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  classId   String
+  class     LPClass  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  responses LPProjectResponse[]
+}
+
+model LPProjectResponse {
+  id        String   @id @default(uuid())
+  answers   String   @db.LongText // JSON with STEM answers
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId String
+  project   LPProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   LPStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, studentId])
+}
+
+model LPLessonPlan {
+  id        String   @id @default(uuid())
+  language  String   // ru, kz
+  subject   String?
+  grade     String?
+  topic     String?
+  duration  Int      @default(45)
+  content   String   @db.LongText
+  createdAt DateTime @default(now())
+
+  projectId String
+  project   LPProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }

@@ -308,7 +308,7 @@ export function StartupChat({ startupId, isOpen, onClose }: StartupChatProps) {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          AI знает контекст вашего стартапа и может помочь с развитием
+          AI использует контекст стартапа и загруженные документы для ответов
         </p>
       </div>
     </div>
