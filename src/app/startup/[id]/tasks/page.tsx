@@ -496,7 +496,6 @@ export default function TasksPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">Задачи</h1>
-              <p className="text-sm text-slate-500 mt-1">Перетаскивайте карточки между колонками</p>
             </div>
             <Button onClick={() => openAddModal('todo')} className="gap-2">
               <PlusIcon className="h-4 w-4" />

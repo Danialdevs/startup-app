@@ -46,6 +46,8 @@ model Startup {
   transactions   Transaction[]
   articles       Article[]
   chatMessages   ChatMessage[]
+  documents      Document[]
+  custdevSurveys CustDevSurvey[]
 }
 
 model ProblemAnswer {
@@ -241,6 +243,74 @@ model Lesson {
 
   moduleId    String
   module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  name        String
+  fileName    String
+  fileUrl     String
+  fileSize    Int
+  fileType    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  startupId   String
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+}
+
+model CustDevSurvey {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  slug        String   @unique
+  isPublished Boolean  @default(false)
+  aiAnalysis  String?  @db.LongText
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  startupId   String
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  questions   CustDevQuestion[]
+  responses   CustDevResponse[]
+}
+
+model CustDevQuestion {
+  id       String @id @default(uuid())
+  text     String @db.Text
+  type     String // text, single_choice, multiple_choice, rating
+  options  String? @db.Text // JSON array for choice questions
+  order    Int    @default(0)
+  required Boolean @default(true)
+
+  surveyId String
+  survey   CustDevSurvey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  answers  CustDevAnswer[]
+}
+
+model CustDevResponse {
+  id              String   @id @default(uuid())
+  respondentName  String?
+  respondentEmail String?
+  createdAt       DateTime @default(now())
+
+  surveyId String
+  survey   CustDevSurvey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  answers  CustDevAnswer[]
+}
+
+model CustDevAnswer {
+  id    String @id @default(uuid())
+  value String @db.Text // JSON for multiple_choice, plain text for others
+
+  questionId String
+  question   CustDevQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  responseId String
+  response   CustDevResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
 }
 
 model ChatMessage {

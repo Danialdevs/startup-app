@@ -23,7 +23,10 @@ import {
   BookOpenIcon,
   ChatBubbleLeftRightIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  FolderIcon,
+  ScaleIcon,
+  ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline'
 
 interface SidebarProps {
@@ -209,6 +212,28 @@ function SidebarContent({ startupId, startupName }: SidebarProps) {
                 Финансы
               </Button>
               <Button
+                variant={pathname === `/startup/${startupId}/documents` ? 'secondary' : 'ghost'}
+                className={cn(
+                  "w-full justify-start gap-3 h-9",
+                  pathname === `/startup/${startupId}/documents` && "bg-primary/10 text-primary hover:bg-primary/15"
+                )}
+                onClick={() => router.push(`/startup/${startupId}/documents`)}
+              >
+                <FolderIcon className="h-4 w-4" />
+                Документы
+              </Button>
+              <Button
+                variant={pathname === `/startup/${startupId}/custdev` || pathname.startsWith(`/startup/${startupId}/custdev/`) ? 'secondary' : 'ghost'}
+                className={cn(
+                  "w-full justify-start gap-3 h-9",
+                  (pathname === `/startup/${startupId}/custdev` || pathname.startsWith(`/startup/${startupId}/custdev/`)) && "bg-primary/10 text-primary hover:bg-primary/15"
+                )}
+                onClick={() => router.push(`/startup/${startupId}/custdev`)}
+              >
+                <ClipboardDocumentCheckIcon className="h-4 w-4" />
+                CustDev
+              </Button>
+              <Button
                 variant={pathname === `/startup/${startupId}/chat` ? 'secondary' : 'ghost'}
                 className={cn(
                   "w-full justify-start gap-3 h-9",
@@ -269,6 +294,17 @@ function SidebarContent({ startupId, startupName }: SidebarProps) {
               >
                 <BookOpenIcon className="h-4 w-4" />
                 Ресурсы
+              </Button>
+              <Button
+                variant={pathname === `/startup/${startupId}/contributions` ? 'secondary' : 'ghost'}
+                className={cn(
+                  "w-full justify-start gap-3 h-9",
+                  pathname === `/startup/${startupId}/contributions` && "bg-primary/10 text-primary hover:bg-primary/15"
+                )}
+                onClick={() => router.push(`/startup/${startupId}/contributions`)}
+              >
+                <ScaleIcon className="h-4 w-4" />
+                Вклад команды
               </Button>
             </nav>
           </div>

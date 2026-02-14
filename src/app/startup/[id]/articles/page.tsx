@@ -286,7 +286,6 @@ export default function ArticlesPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-semibold">Статьи</h1>
-              <p className="text-sm text-muted-foreground mt-1">Блог вашего стартапа</p>
             </div>
             <Button onClick={openAddModal} className="gap-2">
               <PlusIcon className="h-4 w-4" />
