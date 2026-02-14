@@ -11,13 +11,121 @@ import { ArrowPathIcon } from '@heroicons/react/24/solid'
 import { ArrowLeftIcon, SparklesIcon, TrashIcon } from '@heroicons/react/24/outline'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import { STEM_SECTIONS } from '@/lib/launchpad'
 
-/** Подготовка контента КСП: <br> → переносы, склеенные строки таблиц → разделение */
+const TABLE_HEADER_MARKERS = ['Ход урока', 'Сабақтың барысы', 'Lesson Flow']
+
+/** Парсит таблицу "Ход урока": объединяет многострочные ячейки в одну строку с <br> */
+function parseLessonFlowTable(content: string): string {
+  const lines = content.split(/\r?\n/)
+  let tableStartIndex = -1
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    if (TABLE_HEADER_MARKERS.some(m => line.includes(m)) && (line.includes('##') || lines[i + 1]?.trim().startsWith('|'))) {
+      tableStartIndex = line.includes('##') ? i : i + 1
+      break
+    }
+  }
+  if (tableStartIndex < 0) return content
+
+  let headerRowIndex = tableStartIndex
+  while (headerRowIndex < lines.length) {
+    const t = lines[headerRowIndex].trim()
+    if (t.startsWith('|') || (t.includes('Этап') && t.includes('Действия'))) break
+    headerRowIndex++
+  }
+  if (headerRowIndex >= lines.length) return content
+  let headerLine = lines[headerRowIndex].trim()
+  if (!headerLine.startsWith('|') && headerLine.includes('\t')) {
+    headerLine = '| ' + headerLine.replace(/\t/g, ' | ') + ' |'
+  }
+  const numCols = Math.max(2, (headerLine.match(/\|/g) || []).length - 1)
+
+  const normalizeRow = (line: string): string => {
+    const t = line.trim()
+    if (t.startsWith('|')) return t
+    if (t.includes('\t')) return '| ' + t.replace(/\t/g, ' | ') + ' |'
+    return t
+  }
+  const parseRow = (line: string): string[] => {
+    const normalized = normalizeRow(line)
+    const parts = normalized.split('|').map(s => s.trim())
+    const cells = parts.slice(1, parts.length - 1)
+    return cells.slice(0, numCols)
+  }
+
+  const rows: string[][] = []
+  let currentRow: string[] = []
+  let separatorLine = ''
+  let tableEndIndex = headerRowIndex + 1
+
+  for (let j = headerRowIndex; j < lines.length; j++) {
+    tableEndIndex = j + 1
+    const line = lines[j]
+    const trimmed = line.trim()
+    if (!trimmed) {
+      if (currentRow.length) {
+        rows.push(currentRow)
+        currentRow = []
+      }
+      continue
+    }
+    if (trimmed.startsWith('##')) {
+      tableEndIndex = j
+      break
+    }
+    if (trimmed.startsWith('|') || (trimmed.includes('\t') && headerRowIndex < j)) {
+      if (currentRow.length) {
+        rows.push(currentRow)
+        currentRow = []
+      }
+      const rowLine = normalizeRow(line)
+      if (/^\|[\s\-:]+\|/.test(rowLine)) {
+        separatorLine = rowLine
+        continue
+      }
+      const cells = parseRow(rowLine)
+      if (cells.length >= numCols) currentRow = cells
+      continue
+    }
+    if (currentRow.length) {
+      const pipeSplit = trimmed.split(/\s+\|\s+/)
+      if (pipeSplit.length >= 2) {
+        currentRow[currentRow.length - 1] = (currentRow[currentRow.length - 1] + '<br>' + pipeSplit[0]).trim()
+        for (let k = 1; k < pipeSplit.length; k++) {
+          currentRow.push(pipeSplit[k])
+          if (currentRow.length >= numCols) {
+            rows.push(currentRow.slice(0, numCols))
+            currentRow = currentRow.slice(numCols)
+          }
+        }
+      } else {
+        currentRow[currentRow.length - 1] = (currentRow[currentRow.length - 1] + '<br>' + trimmed).trim()
+      }
+    }
+  }
+  if (currentRow.length) rows.push(currentRow)
+
+  const headerCells = parseRow(headerLine)
+  if (headerCells.length < numCols) return content
+
+  const sep = '|' + Array(numCols).fill('---').join('|') + '|'
+  const tableLines: string[] = [
+    '| ' + headerCells.slice(0, numCols).join(' | ') + ' |',
+    separatorLine || sep,
+    ...rows.map(cells => '| ' + cells.slice(0, numCols).map(c => c.replace(/\n/g, '<br>')).join(' | ') + ' |')
+  ]
+  const before = lines.slice(0, headerRowIndex).join('\n')
+  const after = lines.slice(tableEndIndex).join('\n')
+  return before + '\n\n' + tableLines.join('\n') + '\n\n' + after
+}
+
+/** Подготовка контента КСП: парсинг таблицы "Ход урока", склеенные строки таблиц. <br> не трогаем — рендерятся через rehype-raw */
 function prepareKspContent(raw: string): string {
   if (!raw?.trim()) return raw
   let text = raw
-  text = text.replace(/<br\s*\/?>/gi, '\n\n')
+  text = parseLessonFlowTable(text)
   text = text.replace(/\|\|/g, '|\n|')
   return text
 }
@@ -277,6 +385,7 @@ export default function ProjectDetailPage() {
                         <div className="mt-4 pt-4 border-t prose prose-sm max-w-none dark:prose-invert ksp-content">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
                             components={{
                               table: ({ children }) => (
                                 <div className="overflow-x-auto my-4 rounded-lg border border-border">
