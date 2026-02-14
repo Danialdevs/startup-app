@@ -359,10 +359,15 @@ export default function ProjectDetailPage() {
               </Card>
             )}
 
-            {/* KSP List — all users see ready KSP */}
+            {/* KSP List — учитель видит те же КСП, что создал админ */}
             {project.lessonPlans.length > 0 ? (
               <div className="space-y-3">
-                <h2 className="text-lg font-semibold">{isAdmin ? 'Сгенерированные КСП' : 'Готовые КСП'}</h2>
+                <div>
+                  <h2 className="text-lg font-semibold">{isAdmin ? 'Сгенерированные КСП' : 'Готовые КСП'}</h2>
+                  {!isAdmin && (
+                    <p className="text-sm text-muted-foreground mt-0.5">КСП созданы администратором — вы видите готовые планы уроков</p>
+                  )}
+                </div>
                 {project.lessonPlans.map(plan => (
                   <Card key={plan.id}>
                     <CardContent className="p-4">
