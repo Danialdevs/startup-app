@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-// GET single project with responses (teacher sees only their students' responses)
+// GET single project: КСП всегда все (созданы только админом), ответы — у учителя только его ученики
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -29,6 +29,7 @@ export async function GET(
           },
           orderBy: { createdAt: 'desc' },
         },
+        // Все КСП по проекту — без фильтра; создаёт только суперадмин, видят все
         lessonPlans: { orderBy: { createdAt: 'desc' } },
         _count: { select: { responses: true } },
       },
