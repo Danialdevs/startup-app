@@ -181,6 +181,15 @@ export default function ProjectDetailPage() {
   // Expanded KSP
   const [expandedKsp, setExpandedKsp] = useState<string | null>(null)
 
+  const fetchProject = async () => {
+    const res = await fetch(`/api/launchpad/projects/${params.id}`)
+    if (res.ok) {
+      const data = await res.json()
+      setProject(data.project)
+    }
+    return res.ok
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -189,13 +198,7 @@ export default function ProjectDetailPage() {
         const userData = await userRes.json()
         setUser(userData.user)
 
-        const res = await fetch(`/api/launchpad/projects/${params.id}`)
-        if (res.ok) {
-          const data = await res.json()
-          setProject(data.project)
-        } else {
-          router.push('/launchpad/projects')
-        }
+        await fetchProject() || router.push('/launchpad/projects')
       } catch {
         router.push('/launchpad/projects')
       } finally {
@@ -269,9 +272,12 @@ export default function ProjectDetailPage() {
         <div className="flex gap-2 mb-6">
           <Button
             variant={activeTab === 'ksp' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('ksp')}
+            onClick={async () => {
+              setActiveTab('ksp')
+              await fetchProject()
+            }}
           >
-            КСП ({project.lessonPlans.length})
+            КСП ({(project.lessonPlans ?? []).length})
           </Button>
           <Button
             variant={activeTab === 'responses' ? 'default' : 'outline'}
@@ -360,17 +366,17 @@ export default function ProjectDetailPage() {
             )}
 
             {/* Список всех КСП: создаёт только админ, видят все (и админ, и учителя) */}
-            {project.lessonPlans.length > 0 ? (
+            {(project.lessonPlans ?? []).length > 0 ? (
               <div className="space-y-3">
                 <div>
                   <h2 className="text-lg font-semibold">
-                    {isAdmin ? 'Сгенерированные КСП' : 'Готовые КСП'} ({project.lessonPlans.length})
+                    {isAdmin ? 'Сгенерированные КСП' : 'Готовые КСП'} ({(project.lessonPlans ?? []).length})
                   </h2>
                   {!isAdmin && (
                     <p className="text-sm text-muted-foreground mt-0.5">Все КСП созданы администратором</p>
                   )}
                 </div>
-                {project.lessonPlans.map(plan => (
+                {(project.lessonPlans ?? []).map(plan => (
                   <Card key={plan.id}>
                     <CardContent className="p-4">
                       <div

@@ -30,7 +30,7 @@ export async function GET(
           orderBy: { createdAt: 'desc' },
         },
         // Все КСП по проекту — без фильтра; создаёт только суперадмин, видят все
-        lessonPlans: { orderBy: { createdAt: 'desc' } },
+        lessonPlans: { orderBy: { createdAt: 'desc' }, take: 200 },
         _count: { select: { responses: true } },
       },
     })
