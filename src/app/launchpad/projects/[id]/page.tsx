@@ -13,6 +13,15 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { STEM_SECTIONS } from '@/lib/launchpad'
 
+/** Подготовка контента КСП: <br> → переносы, склеенные строки таблиц → разделение */
+function prepareKspContent(raw: string): string {
+  if (!raw?.trim()) return raw
+  let text = raw
+  text = text.replace(/<br\s*\/?>/gi, '\n\n')
+  text = text.replace(/\|\|/g, '|\n|')
+  return text
+}
+
 interface LessonPlan {
   id: string
   language: string
@@ -265,9 +274,32 @@ export default function ProjectDetailPage() {
                         <span className="text-muted-foreground">{expandedKsp === plan.id ? '▲' : '▼'}</span>
                       </div>
                       {expandedKsp === plan.id && (
-                        <div className="mt-4 pt-4 border-t prose prose-sm max-w-none dark:prose-invert">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {plan.content}
+                        <div className="mt-4 pt-4 border-t prose prose-sm max-w-none dark:prose-invert ksp-content">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              table: ({ children }) => (
+                                <div className="overflow-x-auto my-4 rounded-lg border border-border">
+                                  <table className="w-full text-sm border-collapse">{children}</table>
+                                </div>
+                              ),
+                              thead: ({ children }) => <thead className="bg-muted/50">{children}</thead>,
+                              tbody: ({ children }) => <tbody>{children}</tbody>,
+                              tr: ({ children }) => <tr className="border-b border-border hover:bg-muted/20">{children}</tr>,
+                              th: ({ children }) => (
+                                <th className="border border-border px-3 py-2 text-left font-semibold align-top first:min-w-[11rem] first:whitespace-nowrap">
+                                  {children}
+                                </th>
+                              ),
+                              td: ({ children }) => (
+                                <td className="border border-border px-3 py-2 text-left align-top first:min-w-[11rem] first:whitespace-nowrap">
+                                  {children}
+                                </td>
+                              ),
+                              p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                            }}
+                          >
+                            {prepareKspContent(plan.content)}
                           </ReactMarkdown>
                         </div>
                       )}
